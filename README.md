@@ -1,9 +1,4 @@
-<div align="center">
-
-<img src="https://upload.wikimedia.org/wikipedia/en/thumb/4/4b/Amrita_vishwa_vidyapeetham_logo.svg/320px-Amrita_vishwa_vidyapeetham_logo.svg.png" alt="Amrita Vishwa Vidyapeetham" width="280"/>
-
-<br/>
-
+![Logo](amrita-red-logo.svg)
 # MFC3: Enhancing Summarization Efficiency
 ## Text Summarization using T5
 
@@ -20,9 +15,9 @@
 | Name | Roll Number |
 |:---:|:---:|
 | Indraneel R | CB.SC.U4AIE243024323 |
-| Noha Joshy Menachery | CB.SC.U4AIE24336 |
-| Arjun Kunnath | CB.SC.U4AIE24305 |
-| Indraneel R | CB.SC.U4AIE24323 |
+| Rishi Dasari | CB.SC.U4AIE24365 |
+| Abhishek Reddy | CB.SC.U4AIE24325 |
+| M Aryan | CB.SC.U4AIE24341 |
 
 
 </div>
