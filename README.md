@@ -16,7 +16,7 @@
 
 | Name | Roll Number |
 |:---:|:---:|
-| Indraneel R | CB.SC.U4AIE243024323 |
+| Indraneel R | CB.SC.U4AIE24323 |
 | Rishi Dasari | CB.SC.U4AIE24365 |
 | Abhishek Reddy | CB.SC.U4AIE24325 |
 | M Aryan | CB.SC.U4AIE24341 |
