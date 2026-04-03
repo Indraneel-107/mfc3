@@ -1,4 +1,6 @@
-![Logo](amrita-red-logo.svg)
+<p align="center">
+  <img src="amrita-red-logo.svg" width="150"/>
+</p>
 # MFC3: Enhancing Summarization Efficiency
 ## Text Summarization using T5
 
