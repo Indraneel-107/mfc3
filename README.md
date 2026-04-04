@@ -1218,6 +1218,6 @@ If you use or refer this work, please cite:
 
 *Amrita Vishwa Vidyapeetham — School of Engineering*
 
-*MFC3 Project | Group D1 | Computationally Efficient Text Summarization*
+*MFC3 Project | Group D16 | Computationally Efficient Text Summarization*
 
 </div>
