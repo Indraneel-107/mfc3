@@ -1157,7 +1157,7 @@ where `ε = 0.01·‖Rᵢ‖` is adaptive per sentence. The final T5 fine-tuning
 
 ---
 
-## 📊 Results
+## Results
 
 **ROUGE Scores on BBC News Summary Validation Set (T5-Base, 10 epochs):**
 
@@ -1184,9 +1184,9 @@ The T5 fine-tuned model in this project is evaluated on the BBC News Summary dat
 
 ---
 
-## 📖 Citation
+## Citation
 
-If you use or reference this work, please cite:
+If you use or refer this work, please cite:
 
 ```bibtex
 @inproceedings{yao2015compressive,
