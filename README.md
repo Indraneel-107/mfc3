@@ -3,7 +3,7 @@
 </p>
 
 # MFC3: Enhancing Summarization Efficiency  
-## Text Summarization using T5
+## Compressive Text Summarization using Sparse Optimization + T5
 
 ---
 
@@ -13,7 +13,7 @@
 
 ---
 
-## Team Members
+## 👥 Team Members
 
 | Name | Roll Number |
 |:---:|:---:|
@@ -24,96 +24,86 @@
 
 ---
 
-## 🎯 Primary Objective
+# 🎯 Primary Objective
 
-The primary objective of this project is to build a **computationally efficient text summarization system** that produces concise, non-redundant, and readable summaries.
+The objective of this project is to design a **computationally efficient, mathematically grounded text summarization system** that:
 
-The project combines:
-- **Sparse Optimization (theoretical framework)**
-- **Transformer-based summarization (T5 model)**
+- Minimizes redundancy  
+- Preserves important semantic content  
+- Produces fluent summaries  
 
-This hybrid approach improves both:
-- Efficiency (optimization-based selection)
-- Fluency (neural abstractive summarization)
+This is achieved through a **hybrid framework** combining:
+
+1. **Sparse Optimization (Convex formulation)**
+2. **ADMM-based efficient solver**
+3. **Transformer-based abstractive refinement (T5)**
 
 ---
 
-## 🖥️ Platform
+# 🖥️ Platform
 
 | Component | Details |
-|-----------|---------|
-| **Language** | Python 3.9+ |
-| **Framework** | PyTorch / HuggingFace Transformers |
-| **Model** | T5 (Text-to-Text Transfer Transformer) — `t5-base` |
-| **Dataset** | BBC News Summary Dataset |
-| **Optimization (Theory)** | ADMM, Sparse Optimization |
-| **Evaluation** | ROUGE Score |
-| **Environment** | Google Colab / Local |
+|----------|--------|
+| Language | Python |
+| Framework | PyTorch + HuggingFace |
+| Model | T5-base |
+| Dataset | BBC News Summary |
+| Optimization | ADMM |
+| Environment | Colab / Local GPU |
 
 ---
 
-## ⚙️ Implementation
+# ⚙️ SYSTEM PIPELINE
 
-The system is implemented as a **hybrid pipeline**:
+### Stage 1 — Document Representation
 
-### Stage 1 — Data Processing
-- Dataset: BBC News Summary Dataset
-- Text cleaning and preprocessing
-- Tokenization using T5 tokenizer
-
-### Stage 2 — Sparse Optimization (Conceptual Framework)
-- Document represented as matrix:
+Given a document with \( n \) sentences and vocabulary size \( d \):
 
 \[
 D \in \mathbb{R}^{d \times n}
 \]
 
-- Sentence selection formulated as sparse reconstruction problem
-
-### Stage 3 — Transformer-Based Summarization
-- Input format:
-- Model: `t5-base`
-- Uses encoder-decoder architecture
-
-### Stage 4 — Output Generation
-- Beam search decoding
-- Final abstractive summary generation
+Each column \( D_j \) represents sentence \( j \) using TF-IDF encoding.
 
 ---
 
-## 🤖 Model Details
+# 🧠 MATHEMATICAL FORMULATION (CORE)
 
-- Model: **T5-base**
-- Library: HuggingFace Transformers
+## 1. Data Reconstruction Principle
 
-### Generation Parameters:
-- Max Length: 150  
-- Min Length: 40  
-- Beam Size: 4  
-- Length Penalty: 2.0  
-- Early Stopping: True  
-
----
-
-## 🧠 Mathematical Formulation
-
-### Data Reconstruction Objective
+A good summary should reconstruct the document:
 
 \[
-\| D - DA \|_F^2
+D \approx D A
+\]
+
+where:
+
+- \( A \in \mathbb{R}^{n \times n} \) → sentence selection matrix  
+
+---
+
+## 2. Reconstruction Loss
+
+\[
+\min_{A} \; \| D - DA \|_F^2
 \]
 
 ---
 
-### Row-Sparsity Regularization
+## 3. Row Sparsity Constraint
+
+To select only important sentences:
 
 \[
 \| A \|_{2,1} = \sum_{i=1}^{n} \| A_i \|_2
 \]
 
+This enforces **row sparsity** → selects key sentences.
+
 ---
 
-### Full Optimization Problem
+## 4. Final Optimization Problem
 
 \[
 \min_{A} \; \| D - DA \|_F^2 + \lambda \| A \|_{2,1}
@@ -122,7 +112,7 @@ D \in \mathbb{R}^{d \times n}
 Subject to:
 
 \[
-A_{ij} \geq 0, \quad \forall i,j
+A_{ij} \geq 0 \quad \forall i,j
 \]
 
 \[
@@ -131,17 +121,63 @@ A_{ij} \geq 0, \quad \forall i,j
 
 ---
 
-## ⚡ ADMM Optimization
+# ⚡ ADMM SOLVER (STEP-BY-STEP DERIVATION)
 
-### X-Update
+## Step 1: Variable Splitting
+
+Introduce auxiliary variable \( Z \):
 
 \[
-X_j^{k+1} = (D^T D + \rho I)^{-1} \left( D^T D_j + \rho (Z_j^k - U_j^k) \right)
+X = Z
+\]
+
+Reformulated problem:
+
+\[
+\min_{X,Z} \; \| D - DX \|_F^2 + \lambda \| Z \|_{2,1}
 \]
 
 ---
 
-### Z-Update (Group Shrinkage)
+## Step 2: Augmented Lagrangian
+
+\[
+\mathcal{L}(X,Z,U) = \| D - DX \|_F^2 + \lambda \| Z \|_{2,1} + \frac{\rho}{2} \| X - Z + U \|_F^2
+\]
+
+---
+
+## Step 3: X-Update (Derivation)
+
+\[
+X_j^{k+1} = \arg\min \; \| D_j - D X_j \|_2^2 + \frac{\rho}{2} \| X_j - Z_j + U_j \|_2^2
+\]
+
+Taking derivative:
+
+\[
+-2D^T(D_j - DX_j) + \rho(X_j - Z_j + U_j) = 0
+\]
+
+\[
+( D^T D + \rho I ) X_j = D^T D_j + \rho (Z_j - U_j)
+\]
+
+Final update:
+
+\[
+X_j^{k+1} = ( D^T D + \rho I )^{-1} ( D^T D_j + \rho (Z_j - U_j) )
+\]
+
+---
+
+## Step 4: Z-Update (Group Shrinkage)
+
+\[
+Z_i^{k+1} = \arg\min \; \lambda \| Z_i \|_2 + \frac{\rho}{2} \| Z_i - (X_i + U_i) \|_2^2
+\]
+
+Solution:
 
 \[
 Z_i^{k+1} = \max\left(1 - \frac{\lambda}{\rho \|x\|_2}, 0 \right) x
@@ -150,12 +186,12 @@ Z_i^{k+1} = \max\left(1 - \frac{\lambda}{\rho \|x\|_2}, 0 \right) x
 where:
 
 \[
-x = X_i^{k+1} + U_i^k
+x = X_i + U_i
 \]
 
 ---
 
-### U-Update
+## Step 5: U-Update
 
 \[
 U^{k+1} = U^k + \rho (X^{k+1} - Z^{k+1})
@@ -163,9 +199,17 @@ U^{k+1} = U^k + \rho (X^{k+1} - Z^{k+1})
 
 ---
 
-## 🔄 Diversity Enhancement
+# 🔄 DIVERSITY ENHANCEMENT
 
-### Modified Optimization with Dissimilarity
+## Dissimilarity Matrix
+
+\[
+\Delta = [\delta_{ij}]
+\]
+
+---
+
+## Modified Objective
 
 \[
 \min_{X,Z} \; \| D - DX \|_F^2 + \mu \, \text{tr}(\Delta^T X) + \lambda \| Z \|_{2,1}
@@ -173,87 +217,68 @@ U^{k+1} = U^k + \rho (X^{k+1} - Z^{k+1})
 
 ---
 
-## 🔬 Compressive Summarization
+## Updated X-Step
 
-### Joint Optimization Problem
+\[
+X_j^{k+1} = (D^T D + \rho I)^{-1} ( D^T D_j + \rho(Z_j - U_j) - \mu (\Delta^T)_j )
+\]
+
+---
+
+# 🔬 COMPRESSIVE SUMMARIZATION
+
+## Joint Optimization
 
 \[
 \min_{R,A} \; \| D - RA \|_F^2 + \lambda_1 \| A \|_{2,1} + \lambda_2 \sum_{i=1}^{n} \| R_i \|_1
 \]
 
-Subject to:
+---
 
-\[
-R_{ij}, A_{ij} \geq 0
-\]
+## Solution Strategy
+
+- Fix \( R \) → solve for \( A \) (ADMM)  
+- Fix \( A \) → solve for \( R \) (LASSO)  
 
 ---
 
-## 📊 Dataset
+# 🤖 TRANSFORMER INTEGRATION (T5)
 
-- **BBC News Summary Dataset**
-- ~2,225 articles
-- Categories:
-  - Business
-  - Entertainment
-  - Politics
-  - Sport
-  - Tech
+Final stage uses:
+
+- Model: `t5-base`
+- Input:  Text or Paragraph
+- Output: Fluent abstractive summary
 
 ---
 
-## 📈 Results
+## Generation Parameters
 
-- Improved summary quality using T5
-- Reduced redundancy via sparse modeling
-- Better readability compared to extractive methods
-- Efficient summarization pipeline
-
----
-
-## 🚀 How to Run
-
-1. Install dependencies:
-2. Run notebook:
-   
----
-
-## 📊 Evaluation Metrics
-
-- ROUGE-1  
-- ROUGE-2  
-- ROUGE-L  
-- Precision  
-- Recall  
-- F1 Score  
+- Max Length: 150  
+- Min Length: 40  
+- Beam Size: 4  
+- Length Penalty: 2.0  
 
 ---
 
-## 📌 Conclusion
+# 📊 DATASET
 
-- Sparse optimization improves sentence selection  
-- T5 enhances fluency and coherence  
-- Hybrid approach provides efficient and high-quality summaries  
-
----
-
-## 🔮 Future Work
-
-- Fine-tuning T5 on custom datasets  
-- Real-time summarization  
-- Improved compression techniques  
-- Integration with web applications  
+- BBC News Summary Dataset  
+- 2225 articles  
+- Multi-domain  
 
 ---
 
-## 📚 References
+# 📈 RESULTS
 
-- Yao et al., IJCAI 2015  
-- HuggingFace Transformers Documentation  
-- BBC News Dataset  
+- Reduced redundancy  
+- Improved semantic coverage  
+- Fluent summaries via T5  
+- Efficient convergence using ADMM  
 
 ---
 
-## 👨‍💻 Author
+# 🚀 HOW TO RUN
 
-Indraneel R
+```bash
+pip install transformers datasets torch
