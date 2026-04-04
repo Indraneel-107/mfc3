@@ -1,7 +1,8 @@
 <p align="center">
   <img src="amrita-red-logo.svg" width="150"/>
 </p>
-# MFC3: Enhancing Summarization Efficiency
+
+# MFC3: Enhancing Summarization Efficiency  
 ## Text Summarization using T5
 
 ---
@@ -21,20 +22,19 @@
 | Abhishek Reddy | CB.SC.U4AIE24325 |
 | M Aryan | CB.SC.U4AIE24341 |
 
-
-</div>
+---
 
 ## 🎯 Primary Objective
 
-The primary objective of this project is to build a **computationally efficient, unsupervised text summarization system** that produces concise, non-redundant, and readable summaries from multi-document inputs. The system addresses the core limitations of traditional extractive summarization — namely **verbosity, redundancy, and slow optimization** — by unifying sentence-level selection and word-level compression under a single **sparse optimization framework**, enhanced by the **T5 (Text-to-Text Transfer Transformer)** model for abstractive quality output.
+The primary objective of this project is to build a **computationally efficient text summarization system** that produces concise, non-redundant, and readable summaries.
 
-Specifically, the project aims to:
+The project combines:
+- **Sparse Optimization (theoretical framework)**
+- **Transformer-based summarization (T5 model)**
 
-- Formulate document summarization as a **decomposable convex sparse optimization problem** solvable via the Alternating Direction Method of Multipliers (ADMM), enabling significantly faster convergence than gradient-descent-based approaches (acceleration ratio > 60×).
-- Enforce **sentence-level diversity** using an information-theoretic dissimilarity term that prevents redundant content from being selected.
-- Generalize the extractive pipeline into **compressive summarization** through joint sparse optimization over both sentence selection coefficients and word-level sparse representations.
-- Apply **dependency-tree-based grammatical compression** using a linear-time recursive algorithm — eliminating the need for expensive constituent parsing or integer linear programming.
-- Leverage **T5's encoder-decoder architecture** to further refine and abstractively rephrase the compressive output into fluent, coherent summaries.
+This hybrid approach improves both:
+- Efficiency (optimization-based selection)
+- Fluency (neural abstractive summarization)
 
 ---
 
@@ -43,609 +43,217 @@ Specifically, the project aims to:
 | Component | Details |
 |-----------|---------|
 | **Language** | Python 3.9+ |
-| **Deep Learning Framework** | PyTorch / HuggingFace Transformers |
-| **Core NLP Model** | T5 (Text-to-Text Transfer Transformer) — `t5-base` / `t5-large` |
-| **Optimization Backend** | NumPy / SciPy (ADMM, LASSO solvers) |
-| **Dependency Parser** | MATE Tools (Bohnet, 2010) / spaCy |
-| **Evaluation** | ROUGE (ROUGE-1, ROUGE-2, ROUGE-SU4) |
-| **Datasets** | DUC 2006, DUC 2007 (multi-document summarization benchmarks) |
-| **Interface** | Command-line / Streamlit Web App |
-| **Environment** | Google Colab / Local GPU (CUDA 11+) |
+| **Framework** | PyTorch / HuggingFace Transformers |
+| **Model** | T5 (Text-to-Text Transfer Transformer) — `t5-base` |
+| **Dataset** | BBC News Summary Dataset |
+| **Optimization (Theory)** | ADMM, Sparse Optimization |
+| **Evaluation** | ROUGE Score |
+| **Environment** | Google Colab / Local |
 
 ---
 
 ## ⚙️ Implementation
 
-The system is implemented as a **four-stage pipeline**:
+The system is implemented as a **hybrid pipeline**:
 
-**Stage 1 — Document Representation**
-Each input document cluster is converted into a weighted TF-IDF term-frequency matrix `D ∈ ℝ^(d×n)`, where `d` is the vocabulary size and `n` is the total sentence count. Each column `Dᵢ` is the vector representation of sentence `i`.
+### Stage 1 — Data Processing
+- Dataset: BBC News Summary Dataset
+- Text cleaning and preprocessing
+- Tokenization using T5 tokenizer
 
-**Stage 2 — Sparse Extractive Selection via ADMM**
-The following convex optimization problem is solved using the ADMM algorithm:
+### Stage 2 — Sparse Optimization (Conceptual Framework)
+- Document represented as matrix:
 
-```
-min  ‖D − DA‖² + λ‖A‖₂,₁
- A
-s.t. aᵢⱼ ≥ 0 ∀i,j;   diag(A) = 0
-```
+\[
+D \in \mathbb{R}^{d \times n}
+\]
 
-The ℓ₂,₁ norm on matrix `A` induces row-sparsity, effectively selecting a sparse subset of sentences. An optional sentence dissimilarity term `μ · tr(ΔᵀX)` (precomputed from pairwise encoding costs) is added to promote diversity among selected sentences.
+- Sentence selection formulated as sparse reconstruction problem
 
-**Stage 3 — Compressive Summarization via Joint Sparse Optimization**
-The framework is generalized to jointly optimize over sentence selection coefficients `A` and compressed sentence vectors `R`:
+### Stage 3 — Transformer-Based Summarization
+- Input format:
+- Model: `t5-base`
+- Uses encoder-decoder architecture
 
-```
-min  ‖D − RA‖² + λ₁‖A‖₂,₁ + λ₂ Σᵢ‖Rᵢ‖₁
-R,A
-s.t. rᵢⱼ, aᵢⱼ ≥ 0 ∀i,j;   grammatical(Rᵢ)
-```
-
-This non-convex problem is solved via **block coordinate descent**, alternating between:
-- Fixing `R`, solving for `A` using ADMM
-- Fixing `A`, solving for `R` column-wise via non-negative LASSO
-
-**Stage 4 — Grammatical Sentence Compression + T5 Refinement**
-Compressed sentences are generated by extracting maximum-score connected subtrees from dependency parse trees, guided by `KEEP_HEAD` and `SIMUL_DEL` grammatical relation constraint sets. The resulting compressed sentences are then passed through the **T5 model** (fine-tuned on CNN/DailyMail) for final abstractive refinement, improving fluency and coherence of the output summary.
+### Stage 4 — Output Generation
+- Beam search decoding
+- Final abstractive summary generation
 
 ---
 
-*For full mathematical derivations, ADMM algorithm details, experimental results, and citation, see the sections below.*
+## 🤖 Model Details
+
+- Model: **T5-base**
+- Library: HuggingFace Transformers
+
+### Generation Parameters:
+- Max Length: 150  
+- Min Length: 40  
+- Beam Size: 4  
+- Length Penalty: 2.0  
+- Early Stopping: True  
 
 ---
-#### Mathematical Background and Full Derivations
+
+## 🧠 Mathematical Formulation
+
 ### Data Reconstruction Objective
 
-The guiding principle: **a good summary should be able to reconstruct the original document**. If we select a set of summary sentences, we should be able to express every sentence in the document as a linear combination of the summary sentences.
-
-Define a coefficient matrix `A = {A₁, ..., Aₙ} ∈ ℝ^(n×n)`, where each column `Aⱼ = [a₁ⱼ, ..., aₙⱼ]ᵀ` holds the reconstruction coefficients for sentence `j`.
-
-The reconstruction error to minimize is:
-
-$$\sum_{j=1}^{n} \| D_j - D A_j \|_2^2 = \| D - DA \|_F^2$$
-
-This is the Frobenius-norm squared reconstruction loss.
+\[
+\| D - DA \|_F^2
+\]
 
 ---
 
-### Row-Sparsity via ℓ₂,₁ Norm
+### Row-Sparsity Regularization
 
-We want only a **few** sentences to participate as "summary sentences" — i.e., sentence-level sparsity. Since `A` is an `n×n` matrix where row `i` controls the contribution of sentence `i` across all reconstructions, we need **row-sparsity in A**.
-
-The `ℓ₂,₁` norm on a matrix is defined as:
-
-$$\| A \|_{2,1} = \sum_{i=1}^{n} \| A_i \|_2$$
-
-where `Aᵢ` is the `i`-th **row** of `A`. This is the sum of ℓ₂ norms of rows. Minimizing this induces entire rows of `A` to go to zero — exactly the row sparsity we want. A zero row `i` means sentence `i` is never used for reconstruction, hence excluded from the summary.
-
-**Why ℓ₂,₁ and not ℓ₁?**  
-- ℓ₁ induces element-wise sparsity (individual coefficients → 0)
-- ℓ₂,₁ induces **group/row sparsity** (entire rows → 0), which naturally maps to sentence-level selection
+\[
+\| A \|_{2,1} = \sum_{i=1}^{n} \| A_i \|_2
+\]
 
 ---
 
 ### Full Optimization Problem
 
-Combining the reconstruction loss and the row-sparsity regularizer:
+\[
+\min_{A} \; \| D - DA \|_F^2 + \lambda \| A \|_{2,1}
+\]
 
-$$\min_{A} \quad \| D - DA \|_F^2 + \lambda \| A \|_{2,1} \tag{1}$$
+Subject to:
 
-$$\text{s.t.} \quad a_{ij} \geq 0, \quad \forall i, j \tag{2}$$
+\[
+A_{ij} \geq 0, \quad \forall i,j
+\]
 
-$$\quad \quad \text{diag}(A) = 0 \tag{3}$$
-
-**Explanation of constraints:**
-
-- **Constraint (2)** — Non-negativity: coefficients must be non-negative to avoid cancellation and ensure interpretability (a sentence is either used or not, not subtracted).
-- **Constraint (3)** — Zero diagonal: without this, the trivial solution `A = I` (each sentence reconstructs itself perfectly) would dominate. Forcing `diag(A) = 0` prevents a sentence from using itself in its own reconstruction.
-
-**Parameter `λ`:** Controls the sparsity level. Larger `λ` → fewer sentences selected (sparser summary).
-
-After solving, summary sentences are selected by a greedy process based on the magnitude of row norms `‖Aᵢ‖₂` — larger magnitude rows correspond to more "important" sentences.
+\[
+\text{diag}(A) = 0
+\]
 
 ---
 
-## Framework 2: ADMM Solver — Step-by-Step Derivation
+## ⚡ ADMM Optimization
 
-The objective (1) is a sum of two convex terms, making it ideal for the **Alternating Direction Method of Multipliers (ADMM)**. ADMM exploits the decomposable structure of the objective.
+### X-Update
 
-### Variable Splitting
-
-Introduce a copy variable `Z` such that `X = Z`, rewriting problem (1) as:
-
-$$\min_{X,Z} \quad \| D - DX \|_F^2 + \lambda \| Z \|_{2,1} \tag{4}$$
-
-$$\text{s.t.} \quad X = Z, \quad \text{diag}(X) = 0, \quad x_{ij} \geq 0 \quad \forall i,j \tag{5}$$
-
-Now the objective **fully separates**: the first term depends only on `X`, the second only on `Z`. This is the key decomposability property.
+\[
+X_j^{k+1} = (D^T D + \rho I)^{-1} \left( D^T D_j + \rho (Z_j^k - U_j^k) \right)
+\]
 
 ---
 
-### Augmented Lagrangian
+### Z-Update (Group Shrinkage)
 
-The augmented Lagrangian for the equality constraint `X = Z` with dual variable (Lagrange multiplier matrix) `U` is:
+\[
+Z_i^{k+1} = \max\left(1 - \frac{\lambda}{\rho \|x\|_2}, 0 \right) x
+\]
 
-$$\mathcal{L}_\rho(X, Z, U) = \| D - DX \|_F^2 + \lambda \| Z \|_{2,1} + \langle U, X - Z \rangle + \frac{\rho}{2} \| X - Z \|_F^2$$
+where:
 
-where `ρ > 0` is a penalty parameter. In scaled form (absorbing `1/ρ` into `U`), this becomes:
-
-$$\mathcal{L}_\rho(X, Z, U) = \| D - DX \|_F^2 + \lambda \| Z \|_{2,1} + \frac{\rho}{2} \| X - Z + U \|_F^2$$
-
-ADMM alternates between minimizing over `X`, minimizing over `Z`, and updating the dual variable `U`.
-
----
-
-### X-Update Step
-
-Fix `Z` and `U`, minimize over `X` (column by column, since the problem decouples per column of `X`):
-
-$$X_j^{k+1} = \arg\min_{X_j} \quad \| D_j - D X_j \|_2^2 + \frac{\rho}{2} \| X_j - Z_j^k + U_j^k \|_2^2$$
-
-Taking the gradient with respect to `Xⱼ` and setting to zero:
-
-$$-2D^T(D_j - D X_j) + \rho(X_j - Z_j^k + U_j^k) = 0$$
-
-$$2D^T D X_j + \rho X_j = 2D^T D_j + \rho(Z_j^k - U_j^k)$$
-
-$$(2D^T D + \rho I) X_j = 2D^T D_j + \rho(Z_j^k - U_j^k)$$
-
-This gives the **closed-form X-update** (absorbing the factor of 2 into `ρ` for simplicity):
-
-$$\boxed{X_j^{k+1} \leftarrow (D^T D + \rho I)^{-1} \left( D^T D_j + \rho (Z_j^k - U_j^k) \right)}$$
-
-> 💡 **Efficiency Tip**: The matrix `(DᵀD + ρI)` is **constant across all iterations**. Pre-compute its Cholesky factorization `LLᵀ = DᵀD + ρI` once, then solve each column update as a triangular system — no matrix inversion needed during the loop.
-
-After computing `X`, apply the constraints:
-```
-X^(k+1) ← X^(k+1) − diag(X^(k+1))     [zero diagonal]
-x_ij^(k+1) ← max{x_ij^(k+1), 0}        [non-negativity projection]
-```
+\[
+x = X_i^{k+1} + U_i^k
+\]
 
 ---
 
-### Z-Update Step (Proximal Shrinkage)
+### U-Update
 
-Fix `X` and `U`, minimize over `Z`:
-
-$$Z^{k+1} = \arg\min_{Z} \quad \lambda \| Z \|_{2,1} + \frac{\rho}{2} \| X^{k+1} - Z + U^k \|_F^2$$
-
-This is the **proximal operator** of the scaled ℓ₂,₁ norm, applied row-by-row. For each row `i`:
-
-$$Z_i^{k+1} = \arg\min_{Z_i} \quad \frac{\lambda}{\rho} \| Z_i \|_2 + \frac{1}{2} \| Z_i - (X_i^{k+1} + U_i^k) \|_2^2$$
-
-The solution is the **group soft-thresholding (shrinkage) operator**:
-
-$$\boxed{Z_i^{k+1} \leftarrow \mathcal{S}_{\lambda/\rho}(X_i^{k+1} + U_i^k)}$$
-
-where the shrinkage operator is defined as:
-
-$$\mathcal{S}_\gamma(\mathbf{x}) = \max\left\{1 - \frac{\gamma}{\|\mathbf{x}\|_2}, \; 0\right\} \mathbf{x}$$
-
-**Intuition**: If the ℓ₂ norm of the input vector `x` is smaller than `γ`, the entire row is shrunk to **zero** (sentence excluded). Otherwise, the row is shrunk toward zero proportionally. This is the row-sparse analog of scalar soft-thresholding used in LASSO.
-
-Apply constraints after shrinkage:
-```
-Z^(k+1) ← Z^(k+1) − diag(Z^(k+1))
-z_ij^(k+1) ← max{z_ij^(k+1), 0}
-```
+\[
+U^{k+1} = U^k + \rho (X^{k+1} - Z^{k+1})
+\]
 
 ---
 
-### U-Update Step (Dual Variable)
+## 🔄 Diversity Enhancement
 
-Standard ADMM dual ascent update:
+### Modified Optimization with Dissimilarity
 
-$$\boxed{U^{k+1} \leftarrow U^k + \rho(X^{k+1} - Z^{k+1})}$$
-
-This drives `X` and `Z` toward consensus (`X = Z`) over iterations.
-
----
-
-### Full ADMM Algorithm
-
-```
-Algorithm 1: ADMM Solver for Problem (1)
-─────────────────────────────────────────────────────────────────
-Input:  Document matrix D, regularization λ, penalty ρ, tolerance ε
-Output: Coefficient matrix Z (row norms → sentence importance scores)
-
-Precompute:  M = Cholesky(DᵀD + ρI)   [done ONCE before the loop]
-
-for k = 0, 1, 2, ... do
-
-  // ── X-update (column-wise, closed form) ──────────────────────
-  for each column j:
-    X_j^(k+1) ← solve (DᵀD + ρI) X_j = DᵀD_j + ρ(Z_j^k − U_j^k)
-  X^(k+1) ← X^(k+1) − diag(X^(k+1))          [zero diagonal]
-  x_ij^(k+1) ← max{x_ij^(k+1), 0}             [non-negativity]
-
-  // ── Z-update (row-wise group shrinkage) ──────────────────────
-  for each row i:
-    Z_i^(k+1) ← S_{λ/ρ}( X_i^(k+1) + U_i^k )
-  Z^(k+1) ← Z^(k+1) − diag(Z^(k+1))
-  z_ij^(k+1) ← max{z_ij^(k+1), 0}
-
-  // ── U-update (dual ascent) ────────────────────────────────────
-  U^(k+1) ← U^k + ρ(X^(k+1) − Z^(k+1))
-
-  // ── Convergence check ─────────────────────────────────────────
-  if ‖X^(k+1) − Z^(k+1)‖_F < ε:
-    return Z
-
-end for
-
-// ── Summary Generation ────────────────────────────────────────
-Rank sentences by ‖Z_i‖₂ (row norms of Z)
-Greedily select top sentences up to word budget
-─────────────────────────────────────────────────────────────────
-```
-
-> ⚡ This ADMM process converges **significantly faster** than the gradient descent used in He et al. (2012). The paper reports an acceleration ratio exceeding **60×** in the compressive setting.
+\[
+\min_{X,Z} \; \| D - DX \|_F^2 + \mu \, \text{tr}(\Delta^T X) + \lambda \| Z \|_{2,1}
+\]
 
 ---
 
-## Framework 3: Diversity via Sentence Dissimilarity
-
-The basic sparse optimization selects sentences with good coverage. However, it may select multiple sentences conveying the same information. To explicitly encourage **diversity**, a dissimilarity term is added.
-
-### Dissimilarity Matrix Δ
-
-Define pairwise sentence dissimilarity `δᵢⱼ` using an **information-theoretic encoding cost** (Frey & Dueck, 2007):
-
-For each word `w` in sentence `j`:
-- If `w` is also in sentence `i`: encoding cost = `log(length of sentence i)`
-- If `w` is **not** in sentence `i`: encoding cost = `log(vocabulary size)`
-
-$$\delta_{ij} = \sum_{w \in \text{sentence } j} \text{cost}(w, \text{sentence } i)$$
-
-This dissimilarity is **asymmetric** (`δᵢⱼ ≠ δⱼᵢ` in general). The matrix `Δ = [δᵢⱼ]` is precomputed before running ADMM.
-
-The dissimilarity term is:
-
-$$\text{tr}(\Delta^T X) = \sum_{i=1}^{n} \sum_{j=1}^{n} \delta_{ij} x_{ij}$$
-
-This is a **linear** function of `X`, penalizing large coefficients between *similar* sentences, thus encouraging the optimizer to pick *dissimilar* (diverse) sentences.
-
----
-
-### Modified Optimization with Dissimilarity Term
-
-$$\min_{X,Z} \quad \| D - DX \|_F^2 + \mu \, \text{tr}(\Delta^T X) + \lambda \| Z \|_{2,1} \tag{6}$$
-
-$$\text{s.t.} \quad X = Z, \quad \text{diag}(X) = 0, \quad x_{ij} \geq 0 \quad \forall i,j \tag{7}$$
-
-where `μ` is a weight parameter controlling the diversity-coverage trade-off.
-
----
-
-### Modified X-Update with Dissimilarity
-
-Adding the linear term `μ tr(ΔᵀX)` only modifies the X-update step. Taking the gradient:
-
-$$-2D^T(D_j - DX_j) + \mu(\Delta^T)_j + \rho(X_j - Z_j^k + U_j^k) = 0$$
-
-Solving for `Xⱼ`:
-
-$$\boxed{X_j^{k+1} \leftarrow (D^T D + \rho I)^{-1} \left( D^T D_j + \rho(Z_j^k - U_j^k) - \mu (\Delta^T)_j \right)}$$
-
-All other steps (Z-update, U-update) remain identical to Algorithm 1. The dissimilarity matrix `Δ` is precomputed once — the per-iteration overhead is negligible.
-
----
-
-## Framework 4: Compressive Summarization — Joint Sparse Optimization
-
-Extractive summarization is limited: it must use whole sentences verbatim, which may include filler words or redundant phrases. **Compressive summarization** extends the framework to jointly optimize sentence selection *and* word selection within each sentence.
-
-### From Sentence Selection to Word Selection
-
-Recall that in the extractive framework, `D` is the original document matrix and `A` selects sentences. Now we allow each sentence to be **compressed**: replace `D` with a sparse approximation matrix `R ∈ ℝ^(d×n)`, where each column `Rᵢ` is a compressed version of sentence `Dᵢ` with unimportant word dimensions shrunk to zero.
-
-The compression of column `Rᵢ` is controlled by an ℓ₁ penalty on the words:
-
-$$\lambda_2 \sum_{i=1}^{n} \| R_i \|_1$$
-
-This encourages individual word dimensions of each sentence vector to be zero — corresponding to those words being **dropped** from the compressed sentence.
-
----
+## 🔬 Compressive Summarization
 
 ### Joint Optimization Problem
 
-$$\min_{R, A} \quad \| D - RA \|_F^2 + \lambda_1 \| A \|_{2,1} + \lambda_2 \sum_{i=1}^{n} \| R_i \|_1 \tag{8}$$
+\[
+\min_{R,A} \; \| D - RA \|_F^2 + \lambda_1 \| A \|_{2,1} + \lambda_2 \sum_{i=1}^{n} \| R_i \|_1
+\]
 
-$$\text{s.t.} \quad r_{ij}, a_{ij} \geq 0, \quad \forall i,j; \quad \text{grammatical}(R_i) \tag{9}$$
+Subject to:
 
-**Term-by-term explanation:**
-
-| Term | Role |
-|------|------|
-| `‖D − RA‖²` | Reconstruction loss: compressed sentences should still represent the document |
-| `λ₁‖A‖₂,₁` | Row-sparse sentence selection (same as before) |
-| `λ₂ Σ‖Rᵢ‖₁` | Word-sparse compression of each sentence |
-| `grammatical(Rᵢ)` | Grammaticality constraint (handled post-hoc via dependency parsing) |
-
-The `RA` product makes this problem **non-convex jointly** in `R` and `A`. The solution strategy is **block coordinate descent**.
+\[
+R_{ij}, A_{ij} \geq 0
+\]
 
 ---
 
-### Block Coordinate Descent
+## 📊 Dataset
 
-Alternate between optimizing `A` with `R` fixed, and optimizing `R` with `A` fixed.
-
-#### Subproblem for A (Sentence Coefficients)
-
-Fix `R`, optimize over `A`:
-
-$$\min_{A} \quad \| D - RA \|_F^2 + \lambda_1 \| A \|_{2,1}$$
-
-$$\text{s.t.} \quad a_{ij} \geq 0, \quad \forall i,j$$
-
-This has exactly the **same structure** as the original extractive problem (1), with `D` replaced by `R`. Solved by the **same ADMM Algorithm 1**, substituting `R` for `D`:
-
-$$X_j^{k+1} \leftarrow (R^T R + \rho I)^{-1} \left( R^T D_j + \rho(Z_j^k - U_j^k) \right)$$
-
-#### Subproblem for R (Word-level Reconstruction)
-
-Fix `A`, optimize over `R` (column by column):
-
-$$\min_{R} \quad \| D - RA \|_F^2 + \lambda_2 \sum_{i=1}^{n} \| R_i \|_1$$
-
-$$\text{s.t.} \quad r_{ij} \geq 0, \quad \forall i,j$$
-
-This is a **sparse dictionary learning / LASSO** problem. For each column `Rᵢ` (the compressed version of sentence `i`):
-
-$$\min_{R_i \geq 0} \quad \| D_{(i)} - R_i A_{(i)} \|_2^2 + \lambda_2 \| R_i \|_1$$
-
-where `D_(i)` and `A_(i)` denote the relevant rows/columns. This is solved iteratively as a **non-negative LASSO** problem using standard solvers (e.g., coordinate descent).
-
-**Full Block Coordinate Descent Loop:**
-
-```
-Initialize R = D  (start with uncompressed sentences)
-repeat:
-    Fix R, solve for A via ADMM
-    Fix A, solve for R via LASSO (column by column)
-until convergence
-```
-
-After convergence, `R` contains sparse sentence vectors where near-zero word dimensions indicate words to drop, and `A` contains sentence selection coefficients.
+- **BBC News Summary Dataset**
+- ~2,225 articles
+- Categories:
+  - Business
+  - Entertainment
+  - Politics
+  - Sport
+  - Tech
 
 ---
 
-## Framework 5: Grammatical Sentence Compression
+## 📈 Results
 
-The word-level sparse vectors in `R` tell us *which words are important*, but dropping words naively may produce ungrammatical fragments. This step enforces grammaticality using dependency parse trees.
-
-### Dependency-Tree-Based Compression
-
-For each sentence, obtain its **dependency parse tree** using the MATE parser (Bohnet, 2010). The tree encodes grammatical relationships between words (subject, object, modifier, etc.).
-
-The compression task becomes: **select a connected subtree** of the full dependency tree that maximizes the total word score (from `Rᵢ`) subject to grammaticality constraints. This avoids expensive integer linear programming.
+- Improved summary quality using T5
+- Reduced redundancy via sparse modeling
+- Better readability compared to extractive methods
+- Efficient summarization pipeline
 
 ---
 
-### Grammatical Constraint Sets
+## 🚀 How to Run
 
-Two sets of dependency relations govern inclusion/deletion decisions:
+1. Install dependencies:
+2. Run notebook:
+   
+---
 
-**KEEP_HEAD** — If a modifier is included, its head must also be included:
-- Examples: `NMOD` (noun modifier), `AMOD` (adjective modifier)
-- Rationale: Including "nice" in "nice book" requires also including "book"
+## 📊 Evaluation Metrics
 
-**SIMUL_DEL** — Head and modifier must be included or excluded together:
-- Examples: `SBJ` (subject), `OBJ` (object), `VC` (verb complement)
-- Rationale: Dropping any word in a subject-verb-object path yields ungrammatical output
-
-These constraint sets are derived from Clarke & Lapata (2008) and applied locally on the tree.
+- ROUGE-1  
+- ROUGE-2  
+- ROUGE-L  
+- Precision  
+- Recall  
+- F1 Score  
 
 ---
 
-### Recursive Subtree Scoring Algorithm
+## 📌 Conclusion
 
-```
-Algorithm 2: Recursive Sentence Compression
-──────────────────────────────────────────────────────────────────
-Input:  Dependency tree of sentence i, word scores from Rᵢ
-Output: Best grammatical compressed sentence (subtree)
-
-Initialize:
-  node.score ← Rᵢ[word at node]   (word importance from sparse opt.)
-  node.cost  ← 1                    (word count = 1 per node)
-  cmax       ← NULL                 (best complete subtree found so far)
-
-function GET_MAXSCORE_SUBTREE(V):
-  for each child C of V:
-    T_C ← GET_MAXSCORE_SUBTREE(C)       [recurse on subtree]
-
-    if C.label ∉ SIMUL_DEL
-       AND T_C.score / T_C.cost < ε
-       AND deleting T_C does not decrease local bigram score:
-         Delete T_C from C               [prune low-value subtree]
-
-    V.score += T_C.score                 [accumulate scores bottom-up]
-    V.cost  += T_C.cost
-
-  if V is an indicator verb
-     AND V.label ∉ KEEP_HEAD
-     AND V.score > cmax.score:
-       cmax ← V                          [candidate complete sentence]
-
-  if V.score > cmax.score: return V
-  else: return cmax
-
-──────────────────────────────────────────────────────────────────
-```
-
-**Time complexity:** O(n) — each node visited exactly once.
-
-**Threshold `ε`:** Set as `0.01 ‖Rᵢ‖` for sentence `i`, adaptive to sentence-level word importance.
-
-**Bigram score check:** Before pruning a subtree, verify that doing so does not decrease the local bigram document frequency — this prevents creating awkward word-boundary cuts.
+- Sparse optimization improves sentence selection  
+- T5 enhances fluency and coherence  
+- Hybrid approach provides efficient and high-quality summaries  
 
 ---
 
-### Worked Example
+## 🔮 Future Work
 
-Original sentence: *"He said the Corps has toughened regulations since 1996, requiring the damage as small as possible."*
-
-With `ε = 0.02`:
-
-```
-Dependency tree (simplified):
-said [ROOT, score=3.5]
-├── He [SBJ, score=0]          ← SBJ: must keep if "said" kept
-└── has [OBJ, score=3.5]
-    ├── Corps [SBJ, score=1.5]
-    │   └── the [NMOD, score=0] ← low score/cost ratio → DROP
-    └── toughened [VC, score=2.0]
-        ├── regulations [OBJ, score=0.9]
-        ├── since [TMP, score=0.02]  ← score/cost=0.01 < ε → DROP
-        │   └── 1996 [PMOD, score=0.02]
-        └── requiring [ADV, score=0.9]
-            └── damage [VC, score=0.3]
-                ├── the [NMOD, score=0]  → DROP
-                └── small [OPRD, score=0.1]
-                    ├── as [AMOD, score=0] → DROP (bigram preserved)
-                    └── as possible [AMOD] → KEEP (bigram: "as possible")
-```
-
-The subtree rooted at `has` is identified as the best grammatical subtree (`cmax`).
-
-**Compressed output:** *"the Corps has toughened regulations, requiring the damage small."*
+- Fine-tuning T5 on custom datasets  
+- Real-time summarization  
+- Improved compression techniques  
+- Integration with web applications  
 
 ---
 
-## Experiments
+## 📚 References
 
-### Datasets
-
-| Dataset | Task | #Topics | Summary Length |
-|---------|------|---------|----------------|
-| DUC 2006 | Multi-document summarization | 50 | ≤ 250 words |
-| DUC 2007 | Multi-document summarization | 45 | ≤ 250 words |
-
-Parameters tuned on DUC 2005. Dependency parsing by MATE tool (Bohnet, 2010).
+- Yao et al., IJCAI 2015  
+- HuggingFace Transformers Documentation  
+- BBC News Dataset  
 
 ---
 
-### Baseline Methods
+## 👨‍💻 Author
 
-| Method | Description |
-|--------|-------------|
-| LEAD | Extract first sentence from each document |
-| DSDR | Data reconstruction + gradient descent (He et al., 2012) — direct baseline |
-| MatrixFacto. | Symmetric NMF-based summarization (Wang et al., 2008) |
-| DsR-Q | Document-sensitive graph model (Wei et al., 2010) |
-| BI-PLSA | Bi-mixture probabilistic LSA (Shen et al., 2011) |
-| MultiModal. | Graph-based multi-modality learning (Wan & Xiao, 2009) |
-| Liu et al., 2015 | Two-level sparse representation (NP-hard, simulated annealing) |
-| PEER 24 / PEER 15 | DUC 2006/2007 top-performing participants |
-
-**Our models:**
-- `SpOpt-ℓ₂,₁` — Extractive sparse optimization (Framework 1)
-- `SpOpt-Δ` — Extractive + diversity term (Framework 3)
-- `SpOpt-comp` — Compressive (Framework 4+5)
-- `SpOpt-comp-Δ` — Compressive + diversity (full system)
-
----
-
-### ROUGE Evaluation Results
-
-**DUC 2006:**
-
-| System | ROUGE-1 | ROUGE-2 | ROUGE-SU4 |
-|--------|---------|---------|-----------|
-| LEAD | 0.30217 | 0.04947 | 0.09788 |
-| MatrixFacto. | 0.39551 | 0.08549 | N/A |
-| DsR-Q | 0.39550 | 0.08990 | N/A |
-| BI-PLSA | 0.39384 | 0.08497 | N/A |
-| MultiModal. | 0.40503 | 0.08545 | N/A |
-| Liu et al., 2015 | 0.34034 | 0.05233 | 0.10730 |
-| DSDR (baseline) | 0.37695 | 0.07312 | 0.11678 |
-| SpOpt-ℓ₂,₁ | 0.39069 | 0.08336 | 0.13791 |
-| SpOpt-Δ | 0.39962 | 0.08682 | 0.14227 |
-| SpOpt-comp | 0.41331 | 0.09136 | 0.15046 |
-| **SpOpt-comp-Δ** | **0.41534** | **0.09455** | **0.15310** |
-| PEER 24 (top participant) | 0.41095 | 0.09551 | 0.15523 |
-
-**DUC 2007:**
-
-| System | ROUGE-1 | ROUGE-2 | ROUGE-SU4 |
-|--------|---------|---------|-----------|
-| LEAD | 0.31250 | 0.06039 | 0.10507 |
-| CLASSY04 | 0.40562 | 0.09382 | 0.14641 |
-| DsR-Q | 0.42190 | 0.11230 | N/A |
-| MultiModal. | 0.42609 | 0.10438 | N/A |
-| Liu et al., 2015 | 0.35399 | 0.06448 | 0.11669 |
-| DSDR (baseline) | 0.39765 | 0.08679 | 0.13732 |
-| SpOpt-ℓ₂,₁ | 0.41833 | 0.10627 | 0.16304 |
-| SpOpt-Δ | 0.42360 | 0.11109 | 0.16474 |
-| SpOpt-comp | 0.44517 | 0.12025 | 0.17072 |
-| **SpOpt-comp-Δ** | **0.44607** | **0.12454** | **0.17429** |
-| PEER 15 (top participant) | 0.44515 | 0.12448 | 0.17715 |
-
-> ✅ Our best model (`SpOpt-comp-Δ`) achieves **state-of-the-art competitive results** against the top DUC participants while being fully unsupervised.
-
----
-
-### Human Evaluation Results
-
-Three annotators (not authors, fluent English) rated summaries on a 1–5 scale across five dimensions on 10 DUC 2006 topics:
-
-| System | Grammaticality (GR) | Non-Redundancy (NR) | Referential Clarity (RC) | Topic Focus (TF) | Structural Coherence (SC) |
-|--------|--------------------|--------------------|--------------------------|-----------------|--------------------------|
-| SpOpt-Δ | 4.20 ± 0.70 | 3.53 ± 0.62 | 3.93 ± 0.93 | 3.80 ± 0.87 | 3.40 ± 0.66 |
-| SpOpt-comp-Δ | 3.43 ± 0.84 | **3.97 ± 0.60** | **4.00 ± 0.86** | **3.90 ± 0.79** | **3.73 ± 0.68** |
-| Human Reference | 4.97 ± 0.18 | 4.93 ± 0.25 | 5.00 ± 0.00 | 4.93 ± 0.25 | 4.93 ± 0.25 |
-
-Key observations:
-- Compressive system improves **non-redundancy** and **structural coherence** over extractive
-- Slight grammaticality drop due to dependency parser errors (expected)
-- Compression removes filler without hurting overall readability
-
----
-
-## Example Output
-
-**System output (SpOpt-comp-Δ on DUC 2006, El Niño topic):**
-
-> *For many parts of the Americas and Asia, the occasional warming and cooling cycles in the tropical Pacific Ocean known as El Niño and La Niña are unwelcome visitors barging in, bringing all kinds of baggage in the form of distorted patterns of storms and droughts. Although La Niña is already affecting rainfall in Southeast Asia, it hasn't noticeably influenced North America's weather yet. Scientists cautioned that La Niña condition will influence global climate and weather until it has completely subsided. La Niña, the assertive sister of last year's hellacious El Niño, has already contributed to freakish weather around the globe...*
-
-*(Grey-highlighted words in the paper indicate dropped words — removed phrases generally do not hurt overall readability.)*
-
----
-
-## Related Work
-
-| Category | Key Works |
-|----------|-----------|
-| Data reconstruction for summarization | He et al. (2012) — direct baseline |
-| LSA-based summarization | Gong & Liu (2001) |
-| Matrix factorization | Wang et al. (2008) |
-| Graph-based | Wei et al. (2010), Wan & Xiao (2009) |
-| Sparse representation | Liu et al. (2015) — NP-hard formulation |
-| Compressive summarization | Zajic et al. (2006), Berg-Kirkpatrick et al. (2011) |
-| Integer LP compression | Clarke & Lapata (2008), Woodsend & Lapata (2012) |
-| Dual decomposition | Almeida & Martins (2013) |
-| Sparse subspace clustering | Elhamifar & Vidal (2013) |
-| Exemplar-based selection | Elhamifar et al. (2012) |
-
----
-
-## Citation
-
-If you use this work, please cite:
-
-```bibtex
-@inproceedings{yao2015compressive,
-  title     = {Compressive Document Summarization via Sparse Optimization},
-  author    = {Yao, Jin-ge and Wan, Xiaojun and Xiao, Jianguo},
-  booktitle = {Proceedings of the Twenty-Fourth International Joint Conference
-               on Artificial Intelligence (IJCAI 2015)},
-  pages     = {1376--1382},
-  year      = {2015}
-}
-```
-
----
-
-*This work was supported by the National Hi-Tech Research and Development Program (863 Program) of China (2015AA015403, 2014AA015102) and the National Natural Science Foundation of China (61170166, 61331011).*
+Indraneel R
