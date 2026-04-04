@@ -10,7 +10,7 @@ rg/wikipedia/en/thumb/4/4b/Amrita_vishwa_vidyapeetham_logo.svg/320px-Amrita_vish
 
 ---
 
-### 👥 Group D1 — Computationally Efficient Text Summarization Tool
+### 👥 Group D16 — Computationally Efficient Text Summarization Tool
 
 > *School of Engineering, Amrita Vishwa Vidyapeetham*
 
