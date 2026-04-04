@@ -4,6 +4,7 @@
 rg/wikipedia/en/thumb/4/4b/Amrita_vishwa_vidyapeetham_logo.svg/320px-Amrita_vishwa_vidyapeetham_logo.svg.png" alt="Amrita Vishwa Vidyapeetham" width="280"/>
 
 <br/>
+![Uploading amrita-red-logo.svg…]()
 
 # MFC3: Enhancing Summarization Efficiency
 ## Text Summarization using T5
