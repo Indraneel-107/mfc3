@@ -1,6 +1,7 @@
 <div align="center">
 
-<img src="https://upload.wikimedia.org/wikipedia/en/thumb/4/4b/Amrita_vishwa_vidyapeetham_logo.svg/320px-Amrita_vishwa_vidyapeetham_logo.svg.png" alt="Amrita Vishwa Vidyapeetham" width="280"/>
+<img src="https://upload.wikimedia.o![Uploading amrita-red-logo.svg…]()
+rg/wikipedia/en/thumb/4/4b/Amrita_vishwa_vidyapeetham_logo.svg/320px-Amrita_vishwa_vidyapeetham_logo.svg.png" alt="Amrita Vishwa Vidyapeetham" width="280"/>
 
 <br/>
 
