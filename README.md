@@ -1,10 +1,5 @@
-<div align="center">
 
-<img src="https://upload.wikimedia.o![Uploading amrita-red-logo.svg…]()
-rg/wikipedia/en/thumb/4/4b/Amrita_vishwa_vidyapeetham_logo.svg/320px-Amrita_vishwa_vidyapeetham_logo.svg.png" alt="Amrita Vishwa Vidyapeetham" width="280"/>
-
-<br/>
-![Uploading amrita-red-logo.svg…]()
+![amrita_logo1](https://github.com/user-attachments/assets/11ae4c69-8581-4129-8bad-df2e6068a812)
 
 # MFC3: Enhancing Summarization Efficiency
 ## Text Summarization using T5
