@@ -6,7 +6,7 @@
 
 ---
 
-### 👥 Group D16 — Computationally Efficient Text Summarization Tool
+###  Group D16 — Computationally Efficient Text Summarization Tool
 
 > *School of Engineering, Amrita Vishwa Vidyapeetham*
 
@@ -25,7 +25,7 @@
 
 </div>
 
-## 📚 Table of Contents
+## Table of Contents
 
 - [Primary Objective](#-primary-objective)
 - [Platform and Tech Stack](#-platform--tech-stack)
@@ -43,7 +43,7 @@
 
 ---
 
-## 🎯 Primary Objective
+##  Primary Objective
 
 This project builds a **computationally efficient, fine-tuned text summarization system** using the **T5 (Text-to-Text Transfer Transformer)** model on the BBC News Summary dataset. The system learns to map long news articles to concise, accurate summaries by fine-tuning T5-Base using HuggingFace Transformers, evaluated using ROUGE metrics. The mathematical foundations draw from the sparse optimization framework of Yao et al. (IJCAI 2015), connecting extractive sparse selection to abstractive T5 generation.
 
@@ -57,7 +57,7 @@ Specifically, the project aims to:
 
 ---
 
-## 🖥️ Platform & Tech Stack
+##  Platform & Tech Stack
 
 | Component | Details |
 |-----------|---------|
@@ -74,7 +74,7 @@ Specifically, the project aims to:
 
 ---
 
-## ⚙️ Implementation Overview
+##  Implementation Overview
 
 The project runs as a 7-stage pipeline in a Jupyter Notebook:
 
